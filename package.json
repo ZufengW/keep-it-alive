@@ -1,0 +1,27 @@
+{
+  "name": "keep-it-alive",
+  "version": "1.0.0",
+  "description": "LD JAM 46: Keep it alive",
+  "main": "src/main.ts",
+  "author": "Zufeng Wang",
+  "license": "MIT",
+  "private": false,
+  "scripts": {
+    "build": "webpack",
+    "dev": "webpack-dev-server",
+    "lint:fix": "tslint --fix -c tslint.json 'src/**/*.ts'"
+  },
+  "dependencies": {
+    "phaser": "^3.20.1"
+  },
+  "devDependencies": {
+    "copy-webpack-plugin": "^4.6.0",
+    "ts-loader": "^5.3.3",
+    "tslint": "^5.12.1",
+    "typescript": "^3.7.2",
+    "typescript-tslint-plugin": "^0.3.1",
+    "webpack": "^4.29.3",
+    "webpack-cli": "^3.2.3",
+    "webpack-dev-server": "^3.1.14"
+  }
+}

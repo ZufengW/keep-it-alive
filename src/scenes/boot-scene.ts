@@ -1,4 +1,5 @@
 import { getGameHeight, getGameWidth } from '../helpers';
+import { getLevelKey, NUM_LEVELS } from '../state';
 
 const sceneConfig: Phaser.Types.Scenes.SettingsConfig = {
   active: false,
@@ -54,15 +55,19 @@ export class BootScene extends Phaser.Scene {
 
   /**
    * All assets that need to be loaded by the game (sprites, images, animations, tiles, music, etc)
-   * should be added to this method. Once loaded in, the loader will keep track of them, indepedent of which scene
-   * is currently active, so they can be accessed anywhere.
+   * should be added to this method. Once loaded in, the loader will keep track of them,
+   * indepedent of which scene is currently active, so they can be accessed anywhere.
    */
   private loadAssets() {
     // Load sample assets
 
-    // The map!
     this.load.image('tiles', '../../assets/tilesets/tilesheet-extruded.png');
-    this.load.tilemapTiledJSON('map-1', '../../assets/tilemaps/level-0.json');
+    // this.load.tilemapTiledJSON('map-1', '../../assets/tilemaps/level-0.json');
+    // this.load.tilemapTiledJSON('level-0', '../../assets/tilemaps/level-0.json');
+    // Load each of the main levels.
+    for (let i = 1; i <= NUM_LEVELS; i++) {
+      this.load.tilemapTiledJSON(getLevelKey(i), `../../assets/tilemaps/level-${i}.json`);
+    }
 
     // Hack to use the tilemap as a spritesheet.
     // https://www.html5gamedevs.com/topic/4827-creating-a-sprite-from-a-tilemaps-tileset/

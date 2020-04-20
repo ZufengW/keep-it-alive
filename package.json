@@ -8,6 +8,7 @@
   "private": false,
   "scripts": {
     "build": "webpack",
+    "deploy": "./deploy.sh",
     "dev": "webpack-dev-server",
     "lint:fix": "tslint --fix -c tslint.json 'src/**/*.ts'"
   },

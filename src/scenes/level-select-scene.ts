@@ -1,7 +1,7 @@
 /** @fileoverview Level select. Also keeps track of global game state. */
 
 import { getGameHeight, getGameWidth } from '../helpers';
-import { NUM_LEVELS, setLevelNumber } from '../state';
+import { NUM_LEVELS, setLevelNumber, getLevelCompleted } from '../state';
 import { MenuButton } from '../ui/menu-button';
 
 const sceneConfig: Phaser.Types.Scenes.SettingsConfig = {
@@ -29,9 +29,13 @@ export class LevelSelectScene extends Phaser.Scene {
 
     // Draw the level buttons.
     for (let i = 0; i < NUM_LEVELS; i++) {
-      const levelNum = i + 1;  // 1-indexed.
+      // Level numbers are 1-indexed.
+      const levelNum = i + 1;
+      const buttonX = 50 + (i % rowLength) * 100;
+      const buttonY = 100 + (50 * Math.floor(i / rowLength));
       const levelButton = new MenuButton(this,
-          50 + (i % rowLength) * 100, 100 + (50 * Math.floor(i / rowLength)),
+          buttonX,
+          buttonY,
           `Level ${levelNum}`,
           () => {
         setLevelNumber(levelNum);
@@ -39,6 +43,11 @@ export class LevelSelectScene extends Phaser.Scene {
         console.log('starting level', levelNum);
       });
       this.levelButtons.push(levelButton);
+      // Also render if the level was completed.
+      if (getLevelCompleted(levelNum)) {
+        this.add.image(buttonX + levelButton.width - 8,
+            buttonY + levelButton.height - 8, 'spritesheet', 46);
+      }
     }
 
     // tslint:disable-next-line: no-unused-expression

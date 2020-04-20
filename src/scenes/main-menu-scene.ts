@@ -24,6 +24,6 @@ export class MainMenuScene extends Phaser.Scene {
     });
 
     // tslint:disable-next-line: no-unused-expression
-    new MenuButton(this, 50, 200, 'Help', () => console.log('help button clicked'));
+    // new MenuButton(this, 50, 200, 'Help', () => console.log('help button clicked'));
   }
 }

@@ -1,9 +1,7 @@
-import { Input } from 'phaser';
 import { Minion } from '../characters/minion';
 import { getGameHeight, getGameWidth } from '../helpers';
+import { getLevelKey, getLevelNumber, getNumMinions, NUM_LEVELS, setLevelNumber, setLevelCompleted } from '../state';
 import { MenuButton } from '../ui/menu-button';
-
-// Purpose: test doing the snake thing.
 
 // Tiles are 1-indexed.
 /** Glowing orb ring. */
@@ -59,6 +57,8 @@ export class GameScene extends Phaser.Scene {
   private cursorKeys: Phaser.Types.Input.Keyboard.CursorKeys;
 
   private worldLayer: Phaser.Tilemaps.DynamicTilemapLayer;
+  /** Contains wire. */
+  private worldLayer2: Phaser.Tilemaps.DynamicTilemapLayer;
 
   /** The active minions follow each other. The first one is the leader. */
   private minions: Minion[] = [];
@@ -86,7 +86,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   public create() {
-    const map = this.make.tilemap({key: 'map-1'});
+    // const map = this.make.tilemap({key: 'map-1'});
+    const map = this.make.tilemap({key: getLevelKey(getLevelNumber())});
     // Calculate suitable offsets to put the map in the middle of the scene.
     const leftMapOffset = Math.floor((getGameWidth(this) - map.widthInPixels) / 2);
     const topMapOffset = Math.floor((getGameHeight(this) - map.heightInPixels) / 2);
@@ -214,7 +215,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     /** Total number of minions that will spawn for this map. */
-    const NUM_MINIONS = 5;
+    const NUM_MINIONS = getNumMinions(getLevelNumber());
 
     // Create a list of minions.
     const minions: Minion[] = [];
@@ -252,11 +253,11 @@ export class GameScene extends Phaser.Scene {
       if (tile.index === ORB_TILE_INDEX) {
         // A sprite has its origin at the center, so place the sprite at the center of the tile
         orb = this.physics.add.sprite(x, y, 'spritesheet', ORB_TILE_INDEX - 1)
-            .setDrag(1000).setCircle(7, 1, 1);
+            .setDrag(800).setCircle(7, 1, 1);
         worldLayer2.removeTileAt(tile.x, tile.y);
       } else if (tile.index === MOVING_SPIKE_TILE_INDEX) {
         const movingSpike: Phaser.Physics.Arcade.Sprite = movingSpikeGroup.create(x, y, 'spritesheet',
-            MOVING_SPIKE_TILE_INDEX - 1).setDrag(1000);
+            MOVING_SPIKE_TILE_INDEX - 1).setDrag(800);
         movingSpike.setCircle(7, 1, 1);
         worldLayer2.removeTileAt(tile.x, tile.y);
       } else if (tile.index === DEMON_SPRITE_INDEX + 1) {
@@ -268,6 +269,7 @@ export class GameScene extends Phaser.Scene {
         worldLayer2.removeTileAt(tile.x, tile.y);
       }
     });
+    this.worldLayer2 = worldLayer2;
 
     {
       this.physics.add.collider(minionGroup, worldLayer);
@@ -300,28 +302,30 @@ export class GameScene extends Phaser.Scene {
     }
 
     // The default font is monospaced.
-    this.objectiveText = this.add.text(leftMapOffset + 16, topMapOffset - 8, 'Take the orb', { fill: '#FFFFFF' })
-        .setFontSize(32).setScale(0.5);
+    this.objectiveText = this.add.text(leftMapOffset, topMapOffset - 24,
+        'Take the orb', { fill: '#FFFFFF' })
+            .setFontSize(32).setScale(0.5);
     this.objectiveImageLeft = this.add.image(
-        leftMapOffset + map.widthInPixels - 48, topMapOffset, 'spritesheet', VOID_TILE_INDEX - 1)
+        leftMapOffset + map.widthInPixels - 32, topMapOffset - 16, 'spritesheet',
+        VOID_TILE_INDEX - 1)
             .setOrigin(1, 0.5);
     this.objectiveImageRight = this.add.image(
-        leftMapOffset + map.widthInPixels - 16, topMapOffset, 'spritesheet', ORB_TILE_INDEX - 1)
+        leftMapOffset + map.widthInPixels, topMapOffset - 16, 'spritesheet', ORB_TILE_INDEX - 1)
             .setOrigin(1, 0.5);
     // Arrow pointing to objective. -1 for sprite. +1 for next index.
     this.objectiveArrowImage = this.add.image(
-        leftMapOffset + map.widthInPixels - 32, topMapOffset, 'spritesheet', ARROW_TILE_INDEX )
+        leftMapOffset + map.widthInPixels - 16, topMapOffset - 16, 'spritesheet', ARROW_TILE_INDEX )
              .setOrigin(1, 0.5);
 
     // tslint:disable-next-line: no-unused-expression
-    new MenuButton(this, leftMapOffset + map.widthInPixels, topMapOffset + map.heightInPixels, 'Menu', () => {
+    new MenuButton(this, leftMapOffset + map.widthInPixels, topMapOffset + map.heightInPixels + 8, 'Menu', () => {
       this.scene.start('LevelSelect');
     }, {
       fontSize: 12, padding: 4,
     }).setOrigin(1, 0);
     // Restart button
     // tslint:disable-next-line: no-unused-expression
-    new MenuButton(this, leftMapOffset, topMapOffset + map.heightInPixels, 'Reset', () => {
+    new MenuButton(this, leftMapOffset, topMapOffset + map.heightInPixels + 8, 'Reset', () => {
       this.cameras.main.fade(500, 0, 0, 0);
     }, {
       fontSize: 12, padding: 4,
@@ -339,7 +343,7 @@ export class GameScene extends Phaser.Scene {
     if (minionIndex < 0) {
       // The level is lost. Unless you can get into a state where a demon
       // reaches the exit after the last minions die.
-      console.log('No more active minions');
+      // console.log('No more active minions');
       return;
     } else {
       leadMinion = this.minions[minionIndex];
@@ -563,6 +567,13 @@ export class GameScene extends Phaser.Scene {
     if (!minion.active) {
       return false;
     }
+    // Minion needs to be close enough to the middle to trigger it.
+    const v1 = new Phaser.Math.Vector2(tile.getCenterX(), tile.getCenterY());
+    const v2 = new Phaser.Math.Vector2(minion.x, minion.y);
+    if (v1.distanceSq(v2) > 50) {
+      return false;
+    }
+
     // Replace the button with another tile.
     this.worldLayer.putTileAt(tile.index + 1, tile.x, tile.y);
 
@@ -586,6 +597,15 @@ export class GameScene extends Phaser.Scene {
             // Replace the door with an open door.
             this.worldLayer.putTileAt(adjacentTile.index + 1, adjacentTile.x, adjacentTile.y);
           }
+        }
+        // Also check worldLayer2 for wires only.
+        const adjacentTile2 = this.worldLayer2.getTileAt(
+            curr.x + offset.x, curr.y + offset.y);
+        if (adjacentTile2 && adjacentTile2.index === WIRE_TILE_INDEX) {
+            // Continue the reaction.
+            toProcess.push({x: adjacentTile2.x, y: adjacentTile2.y});
+            // Replace the wire with a depleted wire.
+            this.worldLayer2.putTileAt(adjacentTile2.index + 1, adjacentTile2.x, adjacentTile2.y);
         }
       }
     }
@@ -614,6 +634,7 @@ export class GameScene extends Phaser.Scene {
           minion.getData(DATA_FACTION) === FACTION_MINION
           ? MINION_BLESSED_SPRITE_INDEX : DEMON_BLESSED_SPRITE_INDEX);
       this.hasWon = true;
+      setLevelCompleted();
       this.winningSprite = minion;
     }
   }
@@ -621,6 +642,9 @@ export class GameScene extends Phaser.Scene {
 
 /** Handler for when a minion hits an arrow tile. */
 function hitArrow(minion: Phaser.Physics.Arcade.Sprite, tile: Phaser.Tilemaps.Tile) {
+  if (!minion.active) {
+    return false;
+  }
   // Make a vector with the arrow tile's rotation.
   const unitVector = new Phaser.Math.Vector2(Math.cos(tile.rotation), Math.sin(tile.rotation));
   const tilePosition = new Phaser.Math.Vector2(tile.pixelX, tile.pixelY);
